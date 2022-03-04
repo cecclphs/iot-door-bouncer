@@ -1,0 +1,1 @@
+export const sleep = (sleep: number) => new Promise(resolve => setTimeout(resolve, sleep));
