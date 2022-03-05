@@ -2,7 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import fs from 'fs/promises';
 import { db, rtdb } from './admin';
 import gpio, { unlockDoor } from './gpio';
-import client from './mqtt';
+import client, { publishPath } from './mqtt';
 import reader from './reader';
 
 interface CardRecord {
@@ -19,7 +19,7 @@ interface CardRecordList {
 (async () => {
     console.log('Starting CEC Door Bouncer...');
     let loadedCards: CardRecordList = JSON.parse((await fs.readFile('../cards.json')).toString());
-
+    
     gpio.on('unlock', () => {
         // Unlock Door Button pressed
         unlockDoor();
@@ -47,9 +47,9 @@ interface CardRecordList {
 
     const logAccess = async (cardId: number, cardDetails: CardRecord) => {
         //Publish to MQTT
-        client.publish(`cec/makerspace/doorbouncer/lastAccessCardId`, cardId.toString())
-        client.publish(`cec/makerspace/doorbouncer/lastAccessName`, cardDetails.displayName)
-        client.publish(`cec/makerspace/doorbouncer/lastAccessTime`, new Date().toISOString())
+        client.publish(`${publishPath}cardId`, cardId.toString())
+        client.publish(`${publishPath}cardholderName`, cardDetails.displayName)
+        client.publish(`${publishPath}accessTime`, new Date().toISOString())
 
         //Log to Firebase
         const log = {
