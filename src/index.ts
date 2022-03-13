@@ -1,9 +1,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import fs from 'fs/promises';
 import { db, rtdb } from './admin';
-import gpio, { unlockDoor } from './gpio';
+import initGpio from './gpio';
 import client, { publishPath } from './mqtt';
-import reader from './reader';
+import initReader from './reader';
 
 interface CardRecord {
     active: boolean,
@@ -17,14 +17,23 @@ interface CardRecordList {
 }
 
 (async () => {
+    const reader = initReader();
+    const { unlockDoor, gpio } = initGpio();
     console.log('Starting CEC Door Bouncer...');
-    let loadedCards: CardRecordList = JSON.parse((await fs.readFile('../cards.json')).toString());
+    //if cards.json doesn't exist, create it
+    try {
+        await fs.access('cards.json');
+    } catch (err) {
+        console.log('Creating cards.json...');
+        await fs.writeFile('cards.json', '{}');
+    }
+    let loadedCards: CardRecordList = JSON.parse((await fs.readFile('cards.json')).toString());
     
     gpio.on('unlock', () => {
         // Unlock Door Button pressed
         unlockDoor();
     })
-
+    
     reader.on('card', (cardId) => {
         const cardDetails = loadedCards[cardId];
         if(!cardDetails){
@@ -41,9 +50,12 @@ interface CardRecordList {
     
     })
     rtdb.ref('cards').on('value', async snap =>{
-        loadedCards = snap.val();
-        await fs.writeFile('../cards.json', JSON.stringify(loadedCards))
+        const cards = snap.val();
+        if(!cards || Object.keys(cards).length == 0) return;
+        loadedCards = cards;
+        await fs.writeFile('cards.json', JSON.stringify(loadedCards))
     })
+    console.log('Started CEC Door Bouncer');
 
     const logAccess = async (cardId: number, cardDetails: CardRecord) => {
         //Publish to MQTT

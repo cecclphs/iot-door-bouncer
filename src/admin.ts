@@ -5,7 +5,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { credential } from 'firebase-admin';
 
 
-const serviceAccount = require('../serviceAccountKey.json');
+const serviceAccount = require('../serviceAccount.json');
 
 const admin = initializeApp({
     credential: credential.cert(serviceAccount),

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "ts-node-dev --respawn --transpile-only src/index.ts --exit-child",
-    "start": "ts-node src/index.ts"
+    "start": "sudo ts-node src/index.ts --transpile-only",
+    "nstart": "sudo node dist/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "firebase-admin": "^10.0.2",
+    "luxon": "^2.3.1",
     "mqtt": "^4.3.6",
     "onoff": "^6.0.3",
     "serialport": "^10.3.0"
