@@ -1,15 +1,17 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import fs from 'fs/promises';
 import { db, rtdb } from './admin';
-import initGpio from './gpio';
+// import initGpio from './gpio';\
 import client, { publishPath } from './mqtt';
 import initReader from './reader';
 
-interface CardRecord {
+type CardRecord = {
     active: boolean,
-    displayName: string,
     createdOn: number,
-    modifiedOn: number
+    englishName: string,
+    chineseName: string,
+    class: string,
+    studentid: string,
 }
 
 interface CardRecordList {
@@ -18,7 +20,7 @@ interface CardRecordList {
 
 (async () => {
     const reader = initReader();
-    const { unlockDoor, gpio } = initGpio();
+    // const { unlockDoor, gpio } = initGpio();
     console.log('Starting CEC Door Bouncer...');
     //if cards.json doesn't exist, create it
     try {
@@ -29,10 +31,10 @@ interface CardRecordList {
     }
     let loadedCards: CardRecordList = JSON.parse((await fs.readFile('cards.json')).toString());
     
-    gpio.on('unlock', () => {
-        // Unlock Door Button pressed
-        unlockDoor();
-    })
+    // gpio.on('unlock', () => {
+    //     // Unlock Door Button pressed
+    //     unlockDoor();
+    // })
     
     reader.on('card', (cardId) => {
         const cardDetails = loadedCards[cardId];
@@ -43,7 +45,7 @@ interface CardRecordList {
         if(cardDetails.active){
             console.log('Card Found in Registry', cardDetails)
             logAccess(cardId, cardDetails);
-            unlockDoor();
+            // unlockDoor();
         } else {
             console.log('Card is not active');
         }
@@ -60,7 +62,7 @@ interface CardRecordList {
     const logAccess = async (cardId: number, cardDetails: CardRecord) => {
         //Publish to MQTT
         client.publish(`${publishPath}cardId`, cardId.toString())
-        client.publish(`${publishPath}cardholderName`, cardDetails.displayName)
+        client.publish(`${publishPath}cardholderName`, cardDetails.englishName)
         client.publish(`${publishPath}accessTime`, new Date().toISOString())
 
         //Log to Firebase
